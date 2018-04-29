@@ -5,10 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime;
 using Accord.Math.Decompositions;
-using ISAAR.MSolve.PreProcessor.Interfaces;
 using ISAAR.MSolve.PreProcessor;
-using ISAAR.MSolve.Matrices;
-using ISAAR.MSolve.Matrices.Interfaces;
 
 namespace ISAAR.MSolve.PreProcessor.Stochastic
 {

@@ -13,6 +13,7 @@ using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.FEM.Materials;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISAAR.MSolve.PreProcessor.Stochastic;
 
 namespace ISAAR.MSolve.SamplesConsole
 {
@@ -145,10 +146,51 @@ namespace ISAAR.MSolve.SamplesConsole
 
 
 
+        //static void Main(string[] args)
+        //{
+        //    //SolveBuildingInNoSoilSmall();
+        //    TrussExample.Run();
+        //}
         static void Main(string[] args)
         {
-            //SolveBuildingInNoSoilSmall();
-            TrussExample.Run();
+            int KarLoeveTerms = 2;
+            double[] domainBounds = new double[2] { 0, 3 };
+            double sigmaSquare = 0.01;
+            int partition = 3;
+            double correlationLength = 1.5;
+
+            bool isGaussian = true;
+            int PCorder = 2;
+
+            double[] xCoordinates = KarhunenLoeveCoefficientsProvider.KarhunenLoeveFredholmWithFEM(KarLoeveTerms, domainBounds, sigmaSquare, partition, correlationLength).Item1;
+            double[] lambda = KarhunenLoeveCoefficientsProvider.KarhunenLoeveFredholmWithFEM(KarLoeveTerms, domainBounds, sigmaSquare, partition, correlationLength).Item2;
+            double[,] Eigenvectors = KarhunenLoeveCoefficientsProvider.KarhunenLoeveFredholmWithFEM(KarLoeveTerms, domainBounds, sigmaSquare, partition, correlationLength).Item3;
+
+            using (System.IO.StreamWriter sr = new System.IO.StreamWriter(@"E:\GIANNIS_DATA\DESKTOP\VS\MSolve\out2.txt"))
+            {
+                foreach (var item in xCoordinates)
+                {
+                    sr.WriteLine(item);
+                }
+            }
+
+            using (System.IO.StreamWriter sr = new System.IO.StreamWriter(@"E:\GIANNIS_DATA\DESKTOP\VS\MSolve\out5.txt"))
+            {
+                foreach (var item in lambda)
+                {
+                    sr.WriteLine(item);
+                }
+            }
+            using (System.IO.StreamWriter sr = new System.IO.StreamWriter(@"E:\GIANNIS_DATA\DESKTOP\VS\MSolve\out6.txt"))
+            {
+                foreach (var item in Eigenvectors)
+                {
+                    sr.WriteLine(item);
+                }
+            }
+
+            double[][,] PCCoefficientsMatrices = PolynomialChaosCoefficientsProvider.PCCoefficientsCalculator(KarLoeveTerms, PCorder, isGaussian);
+
         }
     }
 }
