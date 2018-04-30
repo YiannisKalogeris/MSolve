@@ -6,15 +6,17 @@ using System.Text;
 using System.Runtime;
 using Accord.Math.Decompositions;
 using ISAAR.MSolve.PreProcessor;
+using Troschuetz.Random.Distributions.Continuous;
+
 
 namespace ISAAR.MSolve.PreProcessor.Stochastic
 {
     public static class KarhunenLoeveCoefficientsProvider
     {
-        public static double GaussianKernelCovarianceFunction(double x,double y, double sigmaSquare, double correlationLength)
+        public static double GaussianKernelCovarianceFunction(double x, double y, double sigmaSquare, double correlationLength)
         {
-            double nominator = -Math.Abs(x-y) / correlationLength;
-            double correlationFunction = Math.Pow(Math.E, nominator)* sigmaSquare;
+            double nominator = -Math.Abs(x - y) / correlationLength;
+            double correlationFunction = Math.Pow(Math.E, nominator) * sigmaSquare;
             return correlationFunction;
         }
 
@@ -31,7 +33,7 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
 
             double[] xCoordinates = new double[partition];
             int[,] IEN = new int[2, nfe];  //local to global
-            int[] ID= new int[partition];
+            int[] ID = new int[partition];
 
             for (int i = 0; i < partition; i++) {
                 //LagrangianShapeFunctons();
@@ -41,8 +43,8 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
 
             for (int i = 0; i < nfe; i++)
             {
-                IEN[ 0, i] = i;
-                IEN[ 1, i] = i+1;
+                IEN[0, i] = i;
+                IEN[1, i] = i + 1;
             }
 
             // localization matrix
@@ -50,17 +52,17 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
             for (int i = 0; i < partition - 1; i++)
             {
                 LM[i, 0] = i;
-                LM[i, 1] = i+1;
+                LM[i, 1] = i + 1;
             }
-            
+
             // computing B matrix
             double[] GaussLegendreCoordinates = KarhunenLoeveCoefficientsProvider.gauss_quad().Item1;
             double[] GaussLegendreWeights = KarhunenLoeveCoefficientsProvider.gauss_quad().Item2;
             double[,] Bmatrix = new double[ndof, ndof];
             for (int i = 0; i < nfe; i++)
             {
-                double[,] Be = new double[neq,neq];
-                double det_Je =(xCoordinates[IEN[1,i]]- xCoordinates[IEN[0, i]])/ 2;
+                double[,] Be = new double[neq, neq];
+                double det_Je = (xCoordinates[IEN[1, i]] - xCoordinates[IEN[0, i]]) / 2;
                 for (int j = 0; j < GaussLegendreOrder; j++) {
                     double xi_gl = GaussLegendreCoordinates[j];
                     double w_gl = GaussLegendreWeights[j];
@@ -89,16 +91,16 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
                     double[] xf = { xCoordinates[IEN[0, j]], xCoordinates[IEN[1, j]] };
                     double det_Jf = (xCoordinates[IEN[1, j]] - xCoordinates[IEN[0, j]]) / 2;
                     for (int k = 0; k < GaussLegendreOrder; k++) {
-                       double xi_gl_e= GaussLegendreCoordinates[k];
-                       double[] NNe = KarhunenLoeveCoefficientsProvider.LagrangianShapeFunctions(xi_gl_e);
-                       double xpk = NNe[0] * xe[0] + NNe[1] * xe[1];
-                       for (int l = 0; l < GaussLegendreOrder; l++)
+                        double xi_gl_e = GaussLegendreCoordinates[k];
+                        double[] NNe = KarhunenLoeveCoefficientsProvider.LagrangianShapeFunctions(xi_gl_e);
+                        double xpk = NNe[0] * xe[0] + NNe[1] * xe[1];
+                        for (int l = 0; l < GaussLegendreOrder; l++)
                         {
                             double xi_gl_f = GaussLegendreCoordinates[l];
                             double[] NNf = KarhunenLoeveCoefficientsProvider.LagrangianShapeFunctions(xi_gl_f);
                             double xpl = NNf[0] * xf[0] + NNf[1] * xf[1];
                             //element C matrix
-                            Cef[0, 0] = Cef[0, 0] + KarhunenLoeveCoefficientsProvider.GaussianKernelCovarianceFunction(xpk,xpl, sigmaSquare, correlationLength) *NNe[0] * NNf[0] * det_Je * det_Jf * GaussLegendreWeights[k] * GaussLegendreWeights[l];
+                            Cef[0, 0] = Cef[0, 0] + KarhunenLoeveCoefficientsProvider.GaussianKernelCovarianceFunction(xpk, xpl, sigmaSquare, correlationLength) * NNe[0] * NNf[0] * det_Je * det_Jf * GaussLegendreWeights[k] * GaussLegendreWeights[l];
                             Cef[1, 0] = Cef[1, 0] + KarhunenLoeveCoefficientsProvider.GaussianKernelCovarianceFunction(xpk, xpl, sigmaSquare, correlationLength) * NNe[0] * NNf[1] * det_Je * det_Jf * GaussLegendreWeights[k] * GaussLegendreWeights[l];
                             Cef[0, 1] = Cef[0, 1] + KarhunenLoeveCoefficientsProvider.GaussianKernelCovarianceFunction(xpk, xpl, sigmaSquare, correlationLength) * NNe[1] * NNf[0] * det_Je * det_Jf * GaussLegendreWeights[k] * GaussLegendreWeights[l];
                             Cef[1, 1] = Cef[1, 1] + KarhunenLoeveCoefficientsProvider.GaussianKernelCovarianceFunction(xpk, xpl, sigmaSquare, correlationLength) * NNe[1] * NNf[1] * det_Je * det_Jf * GaussLegendreWeights[k] * GaussLegendreWeights[l];
@@ -117,14 +119,44 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
             double[] lambda = lambdaAll.Skip(0).Take(KarLoeveTerms).ToArray();
             double[,] EigenvectorsAll = gevd.Eigenvectors;
             double[,] Eigenvectors = new double[partition, KarLoeveTerms];
-            for (int i = 0; i <partition ; i++)
+            for (int i = 0; i < partition; i++)
             {
                 for (int j = 0; j < KarLoeveTerms; j++) {
                     Eigenvectors[i, j] = EigenvectorsAll[i, j];  //each column corresponds to an eigenvector
                 }
             }
-                return new Tuple <double [], double[], double[,]>(xCoordinates,lambda,Eigenvectors);
+            return new Tuple<double[], double[], double[,]>(xCoordinates, lambda, Eigenvectors);
 
+        }
+
+        public static double[,] KarhunenLoeveFredholm1DSampleGenerator(int MCsamples,double[] eigenValues, double[,] eigenModes,double meanValue, bool midpointMethod, bool isGaussian)
+        {
+            if (midpointMethod == false) throw new ArgumentException("It is not supported at the moment");
+            if (isGaussian == false) throw new ArgumentException("It is not supported at the moment");
+            double[,] eigenModesAtMidpoint = new double[eigenModes.GetLength(0) - 1, eigenModes.GetLength(1)];
+            for (int j = 0; j < eigenModes.GetLength(1); j++) {
+                for (int i = 0; i < eigenModes.GetLength(0)-1; i++)
+                {
+                    eigenModesAtMidpoint[i, j] = eigenModes[i, j] + eigenModes[i + 1, j];
+                }
+            }
+            double[,] fieldRealizations = new double[MCsamples, eigenModesAtMidpoint.GetLength(0)];
+            for (int k = 0; k < MCsamples; k++) {
+                double[] ksi = new double[eigenModesAtMidpoint.GetLength(1)];
+                for (int j = 0; j < eigenModesAtMidpoint.GetLength(1); j++) {
+                    var KsiNormalDistribution = new NormalDistribution(0, 1);
+                    ksi[j] = KsiNormalDistribution.NextDouble(); 
+                }
+                for (int i = 0; i < eigenModesAtMidpoint.GetLength(0); i++)
+                {
+                    for (int j = 0; j < eigenModesAtMidpoint.GetLength(1); j++) {
+                        fieldRealizations[k, i] = fieldRealizations[k, i]+Math.Sqrt(eigenValues[j])*eigenModesAtMidpoint[i,j]*ksi[j];
+                    }
+                    fieldRealizations[k, i] = meanValue+fieldRealizations[k, i];
+                }
+            }
+
+         return fieldRealizations;
         }
 
         private static double[] LagrangianShapeFunctions(double xi)

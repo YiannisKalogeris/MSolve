@@ -122,7 +122,7 @@ namespace ISAAR.MSolve.PreProcessor.Stochastic
             
         }
 
-        private static Tuple<double[,], double[][], double[], int> HermitePC(int KLterms, int PCorder)
+        public static Tuple<double[,], double[][], double[], int> HermitePC(int KLterms, int PCorder)
         //private static (double[,] ALPHA, double[][] Psi, double[] PsiSquareNorm, int PCterms) HermitePC(int KLterms, int PCorder)
         {
             int PCterms = 0;
