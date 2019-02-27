@@ -32,12 +32,14 @@ namespace ISAAR.MSolve.Tests.FEM
 {
     public class ThermalEmbeddedQuad
     {
+        private const int embeddedNode1ID = 1000;
+        private const int embeddedNode2ID = 1001;
         private const int subdomainID = 0;
         private const int hostElementsIDStart = 0;
         private const int embeddedElementsIDStart = 1;
-        private const double minX = -0.5, minY = -0.5, maxX = 0.5, maxY = 0.5;
+        private const double minX = -1, minY = -1, maxX = 1, maxY = 1;
         private const double thickness = 1.0;
-        private const int numElementsX = 10, numElementsY = 10;
+        private const int numElementsX = 2, numElementsY = 2;
         private static readonly Vector2 temperatureGradient = Vector2.Create(100.0, 0);
         private const double conductivityMatrix = 1.0, conductivityFiber = 1000.0;
 
@@ -52,8 +54,8 @@ namespace ISAAR.MSolve.Tests.FEM
 
             SkylineSolver solver = (new SkylineSolver.Builder()).BuildSolver(model);
             var provider = new ProblemThermal_v2(model, solver);
-            var rve = new ThermalSquareRve(model, Vector2.Create(minX, minY), Vector2.Create(maxX, maxY), thickness, 
-                temperatureGradient);
+            var rve = new ThermalSquareRve(model.NodesDictionary.Where(x => x.Key < embeddedNode1ID).Select(kv => kv.Value), 
+                Vector2.Create(minX, minY), Vector2.Create(maxX, maxY), thickness, temperatureGradient);
             var homogenization = new HomogenizationAnalyzer(model, solver, provider, rve);
 
             homogenization.Initialize();
@@ -98,13 +100,14 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Nodes
             int numNonEmbeddedNodes = model.NodesDictionary.Count;
-            int embeddedNode1 = numNonEmbeddedNodes + 1; // We do not know if the non embedded node IDs start from 0 or 1. This way there are no duplicate IDs, but there may be a gap.
-            int embeddedNode2 = numNonEmbeddedNodes + 2;
-            model.NodesDictionary.Add(embeddedNode1, new Node_v2() { ID = embeddedNode1, X = minX, Y = minY + 0.25 });
-            model.NodesDictionary.Add(embeddedNode2, new Node_v2() { ID = embeddedNode2, X = maxX, Y = minY + 0.25 });
+            //int embeddedNode1 = numNonEmbeddedNodes + 1; // We do not know if the non embedded node IDs start from 0 or 1. This way there are no duplicate IDs, but there may be a gap.
+            //int embeddedNode2 = numNonEmbeddedNodes + 2;
+
+            model.NodesDictionary.Add(embeddedNode1ID, new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY });
+            model.NodesDictionary.Add(embeddedNode2ID, new Node_v2() { ID = embeddedNode2ID, X = minX, Y = maxY });
 
             // Elements
-            Node_v2[] startEndNodes = { model.NodesDictionary[embeddedNode1], model.NodesDictionary[embeddedNode2] };
+            Node_v2[] startEndNodes = { model.NodesDictionary[embeddedNode1ID], model.NodesDictionary[embeddedNode2ID] };
             var elementType = new ThermalRod(startEndNodes, crossSectionArea, embeddedMaterial);
             int numNonEmbeddedElements = model.ElementsDictionary.Count();
             int embeddedElementID = hostElementsIDStart + numNonEmbeddedElements;

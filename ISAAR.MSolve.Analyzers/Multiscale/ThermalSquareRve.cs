@@ -20,9 +20,9 @@ namespace ISAAR.MSolve.Analyzers.Multiscale
         private const int numDimensions = 2;
 
         private readonly Vector2 macroscopicTemperatureGradient;
-        private readonly IStructuralModel_v2 model;
         private readonly double xMin, yMin, xMax, yMax;
         private readonly double thickness;
+        private readonly IEnumerable<INode> nonEmbeddedNodes;
         private readonly HashSet<INode> leftNodes, rightNodes, bottomNodes, topNodes;
 
         /// <summary>
@@ -33,10 +33,10 @@ namespace ISAAR.MSolve.Analyzers.Multiscale
         /// <param name="thickness"></param>
         /// <param name="macroscopicTemperatureGradient"></param>
         /// <param name="meshTolerance">The default is 1E-10 * min(|xMax-xMin|, |yMax-yMin|)</param>
-        public ThermalSquareRve(IStructuralModel_v2 model, Vector2 bottomLeftCoords, Vector2 topRightCoords, double thickness,
+        public ThermalSquareRve(IEnumerable<INode> nonEmbeddedNodes, Vector2 bottomLeftCoords, Vector2 topRightCoords, double thickness,
             Vector2 macroscopicTemperatureGradient, double meshTolerance)
         {
-            this.model = model;
+            this.nonEmbeddedNodes = nonEmbeddedNodes;
             this.xMin = bottomLeftCoords[0];
             this.yMin = bottomLeftCoords[1];
             this.xMax = topRightCoords[0];
@@ -49,7 +49,7 @@ namespace ISAAR.MSolve.Analyzers.Multiscale
             rightNodes = new HashSet<INode>();
             bottomNodes = new HashSet<INode>();
             topNodes = new HashSet<INode>();
-            foreach (INode node in model.Nodes)
+            foreach (INode node in nonEmbeddedNodes)
             {
                 // Top and right edges are prioritized for corner nodes. //TODO: should the corner nodes be handled differently?
                 if (Math.Abs(node.Y - yMax) <= meshTolerance) topNodes.Add(node);
@@ -59,9 +59,9 @@ namespace ISAAR.MSolve.Analyzers.Multiscale
             }
         }
 
-        public ThermalSquareRve(IStructuralModel_v2 model, Vector2 bottomLeftCoords, Vector2 topRightCoords, double thickness,
+        public ThermalSquareRve(IEnumerable<INode> nonEmbeddedNodes, Vector2 bottomLeftCoords, Vector2 topRightCoords, double thickness,
             Vector2 macroscopicTemperatureGradient) : 
-            this(model, bottomLeftCoords, topRightCoords, thickness, macroscopicTemperatureGradient, 
+            this(nonEmbeddedNodes, bottomLeftCoords, topRightCoords, thickness, macroscopicTemperatureGradient, 
                 1E-10 * topRightCoords.Subtract(bottomLeftCoords).MinAbsolute())
         {
         }
