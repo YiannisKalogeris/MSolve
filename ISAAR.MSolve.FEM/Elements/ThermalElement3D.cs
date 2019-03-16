@@ -4,18 +4,21 @@ using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.Integration.Points;
 using ISAAR.MSolve.Discretization.Integration.Quadratures;
 using ISAAR.MSolve.Discretization.Interfaces;
+using ISAAR.MSolve.FEM.Embedding;
 using ISAAR.MSolve.FEM.Entities;
 using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.FEM.Interpolation;
 using ISAAR.MSolve.FEM.Interpolation.GaussPointExtrapolation;
+using ISAAR.MSolve.FEM.Interpolation.Inverse;
 using ISAAR.MSolve.FEM.Interpolation.Jacobians;
 using ISAAR.MSolve.FEM.Materials;
+using ISAAR.MSolve.Geometry.Coordinates;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
-    public class ThermalElement3D : IFiniteElement_v2
+    public class ThermalElement3D : IFiniteElement_v2, IEmbeddedHostElement_v2
     {
         private readonly static DOFType[] nodalDOFTypes = new DOFType[] { DOFType.Temperature };
         private readonly DOFType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
@@ -78,10 +81,7 @@ namespace ISAAR.MSolve.FEM.Elements
             return capacity;
         }
 
-        public IMatrix StiffnessMatrix(IElement_v2 element)
-        {
-            return BuildConductivityMatrix();
-        }
+        public IMatrix StiffnessMatrix(IElement_v2 element) => DofEnumerator.GetTransformedMatrix(BuildConductivityMatrix());
 
         public Matrix BuildConductivityMatrix()
         {
@@ -183,5 +183,24 @@ namespace ISAAR.MSolve.FEM.Elements
         {
             throw new NotImplementedException();
         }
+
+        #region embedding
+        public EmbeddedNode_v2 BuildHostElementEmbeddedNode(Element_v2 element, Node_v2 node, IEmbeddedDOFInHostTransformationVector_v2 transformationVector)
+        {
+            IInverseInterpolation3D inverseInterpolation = Interpolation.CreateInverseMappingFor(Nodes);
+            NaturalPoint3D naturalPoint = inverseInterpolation.TransformPointCartesianToNatural(new CartesianPoint3D(node.X, node.Y, node.Z));
+            if (naturalPoint == null) return null;
+            double[] naturalCoordinates = naturalPoint.Coordinates;
+
+            element.EmbeddedNodes.Add(node);
+            var embeddedNode = new EmbeddedNode_v2(node, element, transformationVector.GetDependentDOFTypes);
+            for (int i = 0; i < naturalCoordinates.Length; i++)
+                embeddedNode.Coordinates.Add(naturalCoordinates[i]);
+            return embeddedNode;
+        }
+
+        public double[] GetShapeFunctionsForNode(Element_v2 element, EmbeddedNode_v2 node)
+            => Interpolation.EvaluateFunctionsAt(new NaturalPoint3D(node.Coordinates[0], node.Coordinates[1], node.Coordinates[2]));
+        #endregion
     }
 }

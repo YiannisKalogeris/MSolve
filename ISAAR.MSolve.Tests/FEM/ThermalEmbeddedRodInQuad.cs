@@ -31,7 +31,7 @@ using System.Diagnostics;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class ThermalEmbeddedQuad
+    public class ThermalEmbeddedRodInQuad
     {
         private const int embeddedNode1ID = 1000;
         private const int embeddedNode2ID = 1001;
@@ -121,7 +121,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var embeddedGrouping = new ThermalEmbeddedGrouping(model,
                 model.ElementsDictionary.Where(x => x.Key < numNonEmbeddedElements).Select(kv => kv.Value),
                 model.ElementsDictionary.Where(x => x.Key >= numNonEmbeddedElements).Select(kv => kv.Value),
-                new ThermalElementTransformationVector());
+                ThermalHostElementTransformationVector.CreateHost2D());
             embeddedGrouping.ApplyEmbedding();
         }
 

@@ -47,7 +47,8 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IElementDofEnumerator_v2 DofEnumerator { get; set; } = new GenericDofEnumerator_v2();
 
-        public IList<EmbeddedNode_v2> EmbeddedNodes { get; } = new List<EmbeddedNode_v2>();
+        //TODO: if the element is not embedded, this memory is wasted. It should not be initialized here.
+        public IList<EmbeddedNode_v2> EmbeddedNodes { get; } = new List<EmbeddedNode_v2>(); 
 
         public IMatrix MassMatrix(IElement_v2 element)
         {
@@ -111,10 +112,7 @@ namespace ISAAR.MSolve.FEM.Elements
             throw new NotImplementedException();
         }
 
-        public IMatrix StiffnessMatrix(IElement_v2 element)
-        {
-            return DofEnumerator.GetTransformedMatrix(BuildConductivityMatrix());
-        }
+        public IMatrix StiffnessMatrix(IElement_v2 element) => DofEnumerator.GetTransformedMatrix(BuildConductivityMatrix());
 
         public IMatrix DampingMatrix(IElement_v2 element)
         {

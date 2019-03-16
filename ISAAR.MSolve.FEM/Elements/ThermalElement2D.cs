@@ -17,12 +17,11 @@ using System.Collections.Generic;
 //TODO: Is there any point in having different material properties per Gauss point?
 namespace ISAAR.MSolve.FEM.Elements
 {
-    public class ThermalElement2D : IFiniteElement_v2, IEmbeddedHostElement_v2
+    public class ThermalElement2D : IFiniteElement_v2, IEmbeddedHostElement_v2, IEmbeddedElement_v2
     {
         private readonly DOFType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
         private readonly ThermalMaterial material;
         //private readonly Dictionary<GaussPoint2D, ThermalMaterial> materialsAtGaussPoints;
-
 
         public ThermalElement2D(double thickness, IReadOnlyList<Node_v2> nodes, IIsoparametricInterpolation2D interpolation,
             IQuadrature2D quadratureForStiffness, IQuadrature2D quadratureForConsistentMass,
@@ -42,6 +41,9 @@ namespace ISAAR.MSolve.FEM.Elements
         }
 
         public ElementDimensions ElementDimensions => ElementDimensions.TwoD;
+
+        //TODO: if the element is not embedded, this memory is wasted. It should not be initialized here.
+        public IList<EmbeddedNode_v2> EmbeddedNodes { get; } = new List<EmbeddedNode_v2>(); 
 
         public int ID => throw new NotImplementedException(
             "Element type codes should be in a settings class. Even then it's a bad design choice");
@@ -196,16 +198,14 @@ namespace ISAAR.MSolve.FEM.Elements
             throw new NotImplementedException();
         }
 
-        public IMatrix StiffnessMatrix(IElement_v2 element)
-        {
-            return BuildConductivityMatrix();
-        }
+        public IMatrix StiffnessMatrix(IElement_v2 element) => DofEnumerator.GetTransformedMatrix(BuildConductivityMatrix());
 
         public IMatrix DampingMatrix(IElement_v2 element)
         {
             throw new NotImplementedException();
         }
 
+        #region embedding
         public EmbeddedNode_v2 BuildHostElementEmbeddedNode(Element_v2 element, Node_v2 node, IEmbeddedDOFInHostTransformationVector_v2 transformationVector)
         {
             IInverseInterpolation2D inverseInterpolation = Interpolation.CreateInverseMappingFor(Nodes);
@@ -243,5 +243,20 @@ namespace ISAAR.MSolve.FEM.Elements
             //    jacobian.Item2[0, 0], jacobian.Item2[0, 1], jacobian.Item2[0, 2], jacobian.Item2[1, 0], jacobian.Item2[1, 1], jacobian.Item2[1, 2], jacobian.Item2[2, 0], jacobian.Item2[2, 1], jacobian.Item2[2, 2]
             //};
         }
+
+        public Dictionary<DOFType, int> GetInternalNodalDOFs(Element_v2 element, Node_v2 node)
+        {
+            for (int n = 0; n < this.Nodes.Count; ++n)
+            {
+                if (node.ID == this.Nodes[n].ID) return new Dictionary<DOFType, int> { { DOFType.Temperature, n } };
+            }
+            throw new ArgumentException($"GetInternalNodalDOFs: Node {node.ID} not found in element {element.ID}.");
+        }
+
+        public double[] GetLocalDOFValues(Element_v2 hostElement, double[] hostDOFValues)
+        {
+            return DofEnumerator.GetTransformedDisplacementsVector(hostDOFValues);
+        }
+        #endregion
     }
 }

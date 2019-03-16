@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Geometry.Shapes;
+using System.Diagnostics;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -28,9 +29,9 @@ namespace ISAAR.MSolve.Tests.FEM
         private const int hostElementsIDStart = 0;
         private const int embeddedElementsIDStart = 1;
         private const double minX = -1, minY = -1, minZ = -1, maxX = 1, maxY = 1, maxZ = 1;
-        private const double thickness = 1.0;
-        private const int numElementsX = 2, numElementsY = 2;
-        private static readonly Vector2 temperatureGradient = Vector2.Create(100.0, 0);
+        private const double embeddedThickness = 0.10;
+        private const int numElementsX = 2, numElementsY = 2, numElementsZ = 2;
+        private static readonly Vector3 temperatureGradient = Vector3.Create(100.0, 0, 0);
         private const double conductivityMatrix = 1.0, conductivitySheet = 1000.0;
 
         [Fact]
@@ -44,15 +45,17 @@ namespace ISAAR.MSolve.Tests.FEM
 
             SkylineSolver solver = (new SkylineSolver.Builder()).BuildSolver(model);
             var provider = new ProblemThermal_v2(model, solver);
-            var rve = new ThermalSquareRve(model.NodesDictionary.Where(x => x.Key < embeddedNode1ID).Select(kv => kv.Value),
-                Vector2.Create(minX, minY), Vector2.Create(maxX, maxY), thickness, temperatureGradient);
+            var rve = new ThermalCubeRve(model.NodesDictionary.Where(x => x.Key < embeddedNode1ID).Select(kv => kv.Value),
+                Vector3.Create(minX, minY, minZ), Vector3.Create(maxX, maxY, maxZ), temperatureGradient);
             var homogenization = new HomogenizationAnalyzer(model, solver, provider, rve);
 
             homogenization.Initialize();
             homogenization.Solve();
 
             IMatrix conductivity = homogenization.EffectiveConstitutiveTensors[subdomainID];
-            Console.WriteLine();
+            Debug.WriteLine($"C = [ {conductivity[0, 0]} {conductivity[0, 1]} {conductivity[0, 2]};");
+            Debug.WriteLine($"      {conductivity[1, 0]} {conductivity[1, 1]} {conductivity[1, 2]};");
+            Debug.WriteLine($"      {conductivity[2, 0]} {conductivity[2, 1]} {conductivity[2, 2]}]");
         }
 
         private static void AddHostElements(Model_v2 model)
@@ -62,56 +65,21 @@ namespace ISAAR.MSolve.Tests.FEM
             double k = 1.0;
             double c = 1.0;
 
-            // Nodes
-            int numNodes = 27;
-            var nodes = new Node_v2[numNodes];
-            nodes[0] = new Node_v2 { ID = 0,   X = maxX,              Y = maxY,              Z = maxZ              };
-            nodes[1] = new Node_v2 { ID = 1,   X = maxX,              Y = (maxY + minY) / 2, Z = maxZ              };
-            nodes[2] = new Node_v2 { ID = 2,   X = maxX,              Y = minY,              Z = maxZ              };
-            nodes[3] = new Node_v2 { ID = 3,   X = maxX,              Y = maxY,              Z = (maxZ + minZ) / 2 };
-            nodes[4] = new Node_v2 { ID = 4,   X = maxX,              Y = (maxY + minY) / 2, Z = (maxZ + minZ) / 2 };
-            nodes[5] = new Node_v2 { ID = 5,   X = maxX,              Y = minY,              Z = (maxZ + minZ) / 2 };
-            nodes[6] = new Node_v2 { ID = 6,   X = maxX,              Y = maxY,              Z = minZ              };
-            nodes[7] = new Node_v2 { ID = 7,   X = maxX,              Y = (maxY + minY) / 2, Z = minZ              };
-            nodes[8] = new Node_v2 { ID = 8,   X = maxX,              Y = minY,              Z = minZ              };
-            nodes[9] = new Node_v2 { ID = 9,   X = (maxX + minX) / 2, Y = maxY,              Z = maxZ              };
-            nodes[10] = new Node_v2 { ID = 10, X = (maxX + minX) / 2, Y = (maxY + minY) / 2, Z = maxZ              };
-            nodes[11] = new Node_v2 { ID = 11, X = (maxX + minX) / 2, Y = minY,              Z = maxZ              };
-            nodes[12] = new Node_v2 { ID = 12, X = (maxX + minX) / 2, Y = maxY,              Z = (maxZ + minZ) / 2 };
-            nodes[13] = new Node_v2 { ID = 13, X = (maxX + minX) / 2, Y = (maxY + minY) / 2, Z = (maxZ + minZ) / 2 };
-            nodes[14] = new Node_v2 { ID = 14, X = (maxX + minX) / 2, Y = minY,              Z = (maxZ + minZ) / 2 };
-            nodes[15] = new Node_v2 { ID = 15, X = (maxX + minX) / 2, Y = maxY,              Z = minZ              };
-            nodes[16] = new Node_v2 { ID = 16, X = (maxX + minX) / 2, Y = (maxY + minY) / 2, Z = minZ              };
-            nodes[17] = new Node_v2 { ID = 17, X = (maxX + minX) / 2, Y = minY,              Z = minZ              };
-            nodes[18] = new Node_v2 { ID = 18, X = minX,              Y = maxY,              Z = maxZ              };
-            nodes[19] = new Node_v2 { ID = 19, X = minX,              Y = (maxY + minY) / 2, Z = maxZ              };
-            nodes[20] = new Node_v2 { ID = 20, X = minX,              Y = minY,              Z = maxZ              };
-            nodes[21] = new Node_v2 { ID = 21, X = minX,              Y = maxY,              Z = (maxZ + minZ) / 2 };
-            nodes[22] = new Node_v2 { ID = 22, X = minX,              Y = (maxY + minY) / 2, Z = (maxZ + minZ) / 2 };
-            nodes[23] = new Node_v2 { ID = 23, X = minX,              Y = minY,              Z = (maxZ + minZ) / 2 };
-            nodes[24] = new Node_v2 { ID = 24, X = minX,              Y = maxY,              Z = minZ              };
-            nodes[25] = new Node_v2 { ID = 25, X = minX,              Y = (maxY + minY) / 2, Z = minZ              };
-            nodes[26] = new Node_v2 { ID = 26, X = minX,              Y = minY,              Z = minZ              };
-            for (int i = 0; i < numNodes; ++i) model.NodesDictionary[i] = nodes[i];
+            // Generate mesh
+            var meshGenerator = new UniformMeshGenerator3D(minX, minY, minZ, maxX, maxY, maxZ, numElementsX, numElementsY, numElementsZ);
+            (IReadOnlyList<Node_v2> vertices, IReadOnlyList<CellConnectivity_v2> cells) = meshGenerator.CreateMesh();
 
-            // Elements
-            int numElements = 8;
+            // Add nodes to the model
+            for (int n = 0; n < vertices.Count; ++n) model.NodesDictionary.Add(n, vertices[n]);
+
+            // Add the elements to the model
             var elementFactory = new ThermalElement3DFactory(new ThermalMaterial(density, c, conductivityMatrix));
-            var elements = new ThermalElement3D[8];
-            elements[0] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[13], nodes[4], nodes[3], nodes[12], nodes[10], nodes[1], nodes[0], nodes[9] });
-            elements[1] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[14], nodes[5], nodes[4], nodes[13], nodes[11], nodes[2], nodes[1], nodes[10] });
-            elements[2] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[16], nodes[7], nodes[6], nodes[15], nodes[13], nodes[4], nodes[3], nodes[12] });
-            elements[3] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[17], nodes[8], nodes[7], nodes[16], nodes[14], nodes[5], nodes[4], nodes[13] });
-            elements[4] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[22], nodes[13], nodes[12], nodes[21], nodes[19], nodes[10], nodes[9], nodes[18] });
-            elements[5] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[23], nodes[14], nodes[13], nodes[22], nodes[20], nodes[11], nodes[10], nodes[19] });
-            elements[6] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[25], nodes[16], nodes[15], nodes[24], nodes[22], nodes[13], nodes[12], nodes[21] });
-            elements[7] = elementFactory.CreateElement(CellType.Hexa8, new Node_v2[] { nodes[26], nodes[17], nodes[16], nodes[25], nodes[23], nodes[14], nodes[13], nodes[22] });
-
-            for (int i = 0; i < numElements; ++i)
+            for (int e = 0; e < cells.Count; ++e)
             {
-                var elementWrapper = new Element_v2() { ID = i, ElementType = elements[i] };
-                foreach (var node in elements[i].Nodes) elementWrapper.AddNode(node);
-                model.ElementsDictionary[i] = elementWrapper;
+                ThermalElement3D element = elementFactory.CreateElement(cells[e].CellType, cells[e].Vertices);
+                var elementWrapper = new Element_v2() { ID = e + hostElementsIDStart, ElementType = element };
+                foreach (Node_v2 node in element.Nodes) elementWrapper.AddNode(node);
+                model.ElementsDictionary.Add(elementWrapper.ID, elementWrapper);
                 model.SubdomainsDictionary[subdomainID].Elements.Add(elementWrapper);
             }
         }
@@ -125,17 +93,23 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Nodes
             int numNonEmbeddedNodes = model.NodesDictionary.Count;
-
-            model.NodesDictionary.Add(embeddedNode1ID, new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY });
-            model.NodesDictionary.Add(embeddedNode2ID, new Node_v2() { ID = embeddedNode2ID, X = minX, Y = maxY });
+            //TODO: if we define the element on the XZ plane, it will not work. The element will only access node.X, node.Y.
+            var embeddedNodes = new Node_v2[]
+            {
+                new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY, Z = minZ },
+                new Node_v2() { ID = embeddedNode2ID, X = maxX, Y = minY, Z = minZ },
+                new Node_v2() { ID = embeddedNode3ID, X = maxX, Y = maxY, Z = minZ  },
+                new Node_v2() { ID = embeddedNode4ID, X = minX, Y = maxY, Z = minZ  }
+            };
+            foreach (var node in embeddedNodes) model.NodesDictionary.Add(node.ID, node);
 
             // Elements
-            Node_v2[] startEndNodes = { model.NodesDictionary[embeddedNode1ID], model.NodesDictionary[embeddedNode2ID] };
-            var elementType = new ThermalRod(startEndNodes, crossSectionArea, embeddedMaterial);
+            var elementFactory = new ThermalElement2DFactory(embeddedThickness, embeddedMaterial);
+            var elementType = elementFactory.CreateElement(CellType.Quad4, embeddedNodes);
             int numNonEmbeddedElements = model.ElementsDictionary.Count();
             int embeddedElementID = hostElementsIDStart + numNonEmbeddedElements;
             var elementWrapper = new Element_v2() { ID = embeddedElementID, ElementType = elementType };
-            foreach (var node in startEndNodes) elementWrapper.AddNode(node);
+            foreach (var node in elementType.Nodes) elementWrapper.AddNode(node);
             model.ElementsDictionary[elementWrapper.ID] = elementWrapper;
             model.SubdomainsDictionary[subdomainID].Elements.Add(elementWrapper);
 
@@ -143,7 +117,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var embeddedGrouping = new ThermalEmbeddedGrouping(model,
                 model.ElementsDictionary.Where(x => x.Key < numNonEmbeddedElements).Select(kv => kv.Value),
                 model.ElementsDictionary.Where(x => x.Key >= numNonEmbeddedElements).Select(kv => kv.Value),
-                new ThermalElementTransformationVector());
+                ThermalHostElementTransformationVector.CreateHost3D());
             embeddedGrouping.ApplyEmbedding();
         }
 
