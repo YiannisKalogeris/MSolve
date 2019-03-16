@@ -27,6 +27,7 @@ using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Preprocessor.Meshes.Custom;
 using ISAAR.MSolve.Preprocessor.Meshes;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+using System.Diagnostics;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -62,7 +63,7 @@ namespace ISAAR.MSolve.Tests.FEM
             homogenization.Solve();
 
             IMatrix conductivity = homogenization.EffectiveConstitutiveTensors[subdomainID];
-            Console.WriteLine();
+            Debug.WriteLine($"C = [ {conductivity[0, 0]} {conductivity[0, 1]}; {conductivity[1, 0]} {conductivity[1, 1]}");
         }
 
         private static void AddHostElements(Model_v2 model)
