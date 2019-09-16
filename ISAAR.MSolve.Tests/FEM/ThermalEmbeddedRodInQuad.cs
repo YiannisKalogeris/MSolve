@@ -35,14 +35,16 @@ namespace ISAAR.MSolve.Tests.FEM
     {
         private const int embeddedNode1ID = 1000;
         private const int embeddedNode2ID = 1001;
+        private const int embeddedNode3ID = 1002;
+        private const int embeddedNode4ID = 1003;
         private const int subdomainID = 0;
         private const int hostElementsIDStart = 0;
         private const int embeddedElementsIDStart = 1;
-        private const double minX = -1, minY = -1, maxX = 1, maxY = 1;
+        private const double minX = -3, minY = -2, maxX = 3, maxY = 2;
         private const double thickness = 1.0;
-        private const int numElementsX = 2, numElementsY = 2;
+        private const int numElementsX = 4, numElementsY = 4;
         private static readonly Vector2 temperatureGradient = Vector2.Create(100.0, 0);
-        private const double conductivityMatrix = 1.0, conductivityFiber = 1000.0;
+        private const double conductivityMatrix = 0.25, conductivityFiber = 3500.0;
 
         [Fact]
         public static void ThermalEmbeddedElementExample()
@@ -96,7 +98,7 @@ namespace ISAAR.MSolve.Tests.FEM
             // Material
             double density = 1.0;
             double c = 1.0;
-            double crossSectionArea = 0.1;
+            double crossSectionArea = 0.08*3;
             var embeddedMaterial = new ThermalMaterial(density, c, conductivityFiber);
 
             // Nodes
@@ -104,8 +106,9 @@ namespace ISAAR.MSolve.Tests.FEM
             //int embeddedNode1 = numNonEmbeddedNodes + 1; // We do not know if the non embedded node IDs start from 0 or 1. This way there are no duplicate IDs, but there may be a gap.
             //int embeddedNode2 = numNonEmbeddedNodes + 2;
 
-            model.NodesDictionary.Add(embeddedNode1ID, new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY });
-            model.NodesDictionary.Add(embeddedNode2ID, new Node_v2() { ID = embeddedNode2ID, X = minX, Y = maxY });
+            model.NodesDictionary.Add(embeddedNode1ID, new Node_v2() { ID = embeddedNode1ID, X = minX+0.03, Y = minY/2 });
+            model.NodesDictionary.Add(embeddedNode2ID, new Node_v2() { ID = embeddedNode2ID, X = maxX-0.03, Y = minY/2 });
+
 
             // Elements
             Node_v2[] startEndNodes = { model.NodesDictionary[embeddedNode1ID], model.NodesDictionary[embeddedNode2ID] };

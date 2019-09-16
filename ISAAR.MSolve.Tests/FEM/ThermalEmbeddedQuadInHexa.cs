@@ -21,18 +21,18 @@ namespace ISAAR.MSolve.Tests.FEM
 {
     public class ThermalEmbeddedQuadInHexa
     {
-        private const int embeddedNode1ID = 1000;
+        private const int embeddedNode1ID = 1000; 
         private const int embeddedNode2ID = 1001;
         private const int embeddedNode3ID = 1002;
         private const int embeddedNode4ID = 1003;
         private const int subdomainID = 0;
         private const int hostElementsIDStart = 0;
         private const int embeddedElementsIDStart = 1;
-        private const double minX = -1, minY = -1, minZ = -1, maxX = 1, maxY = 1, maxZ = 1;
-        private const double embeddedThickness = 0.10;
+        private const double minX = -1, minY = -1, minZ = -34, maxX = 1, maxY = 1, maxZ = 34;
+        private const double embeddedThickness = 0.34;
         private const int numElementsX = 2, numElementsY = 2, numElementsZ = 2;
         private static readonly Vector3 temperatureGradient = Vector3.Create(100.0, 0, 0);
-        private const double conductivityMatrix = 1.0, conductivitySheet = 1000.0;
+        private const double conductivityMatrix = 0.25, conductivitySheet = 3500.0;
 
         [Fact]
         public static void ThermalEmbeddedElementExample()
@@ -96,10 +96,10 @@ namespace ISAAR.MSolve.Tests.FEM
             //TODO: if we define the element on the XZ plane, it will not work. The element will only access node.X, node.Y.
             var embeddedNodes = new Node_v2[]
             {
-                new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY, Z = minZ },
-                new Node_v2() { ID = embeddedNode2ID, X = maxX, Y = minY, Z = minZ },
-                new Node_v2() { ID = embeddedNode3ID, X = maxX, Y = maxY, Z = minZ  },
-                new Node_v2() { ID = embeddedNode4ID, X = minX, Y = maxY, Z = minZ  }
+                new Node_v2() { ID = embeddedNode1ID, X = minX, Y = minY, Z = minZ/2 },
+                new Node_v2() { ID = embeddedNode2ID, X = maxX, Y = minY, Z = minZ/2 },
+                new Node_v2() { ID = embeddedNode3ID, X = maxX, Y = maxY, Z = minZ/2  },
+                new Node_v2() { ID = embeddedNode4ID, X = minX, Y = maxY, Z = minZ/2  }
             };
             foreach (var node in embeddedNodes) model.NodesDictionary.Add(node.ID, node);
 

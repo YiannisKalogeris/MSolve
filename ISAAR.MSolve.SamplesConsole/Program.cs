@@ -48,6 +48,10 @@ namespace ISAAR.MSolve.SamplesConsole
             FloatingSubdomainMatrices.WriteStiffnessOfContinuum3DStructure();
         }
 
+        //private static void
+        //{
+        //}
+
         private static void SolveBuildingInNoSoilSmall()
         {
             VectorExtensions.AssignTotalAffinityCount();
